@@ -1,8 +1,6 @@
 <template>
   <div class="dashboard-container">
-    
     <TheSidebar />
-
     <main class="main-content">
         <router-view />
     </main>
@@ -10,7 +8,7 @@
 </template>
 
 <script setup>
-// MUDANÇA: Importamos o componente com o novo nome.
+// MUDANÇA: Importamos o componente com o novo nome
 import TheSidebar from '../components/TheSidebar.vue';
 </script>
 
