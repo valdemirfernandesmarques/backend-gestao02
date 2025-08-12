@@ -2,15 +2,13 @@ import axios from 'axios';
 
 // Criamos uma instância do Axios com a configuração base
 const api = axios.create({
-  baseURL: 'http://localhost:3334' // MUDANÇA: Nosso novo endereço do backend
+  // MUDANÇA IMPORTANTE: Apontamos para o novo endereço do seu servidor na nuvem
+  baseURL: 'https://jardim-servidor.onrender.com' 
 });
 
-// Adicionamos um "interceptor" que anexa o token de autenticação em TODAS as requisições
-// que usarem esta instância 'api'.
+// Este interceptor anexa o token de autenticação em todas as requisições
 api.interceptors.request.use(async (config) => {
-  // Pega o token do localStorage
   const token = localStorage.getItem('user-token');
-  // Se o token existir, adiciona ao cabeçalho 'Authorization'
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
