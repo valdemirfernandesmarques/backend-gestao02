@@ -1,31 +1,19 @@
+// backend/models/Pagamento.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Pagamento = sequelize.define('Pagamento', {
   valor: {
-    type: DataTypes.DECIMAL(10, 2),
+    type: DataTypes.DECIMAL(10,2),
     allowNull: false
   },
   dataPagamento: {
-    type: DataTypes.DATEONLY,
+    type: DataTypes.DATE,
     allowNull: false
   },
-  status: {
-    type: DataTypes.ENUM('Pendente', 'Pago', 'Atrasado', 'Cancelado'),
-    allowNull: false,
-    defaultValue: 'Pendente'
-  },
-  metodoPagamento: {
-    type: DataTypes.ENUM('Dinheiro', 'Pix', 'Cartão', 'Boleto'),
-    allowNull: true
-  },
-  alunoId: {
-    type: DataTypes.INTEGER,
+  metodo: {
+    type: DataTypes.ENUM('DINHEIRO','PIX','CARTAO'),
     allowNull: false
-  },
-  turmaId: {
-    type: DataTypes.INTEGER,
-    allowNull: true // Pode haver pagamentos não atrelados a uma turma específica (ex: taxa de matrícula)
   }
 }, {
   tableName: 'pagamentos'

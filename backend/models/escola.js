@@ -1,4 +1,4 @@
-'use strict';
+// backend/models/Escola.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
@@ -9,28 +9,23 @@ const Escola = sequelize.define('Escola', {
   },
   cnpj: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: true
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: true
   },
-  telefone: {
-    type: DataTypes.STRING
-  },
-  activationToken: {
+  endereco: {
     type: DataTypes.STRING,
     allowNull: true
   },
-  gatewayAccountId: {
+  logoUrl: {
     type: DataTypes.STRING,
     allowNull: true
   },
-  onboardingCompleto: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
+  inicioPeriodoTeste: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   tableName: 'escolas'

@@ -1,18 +1,26 @@
-// Importa o Sequelize
-const Sequelize = require('sequelize');
+// backend/config/database.js
+const { Sequelize } = require('sequelize');
+require('dotenv').config();
 
-// --- ATUALIZE COM SUAS CREDENCIAIS DO BANCO DE DADOS ---
-const DB_NAME = 'gestao_em_danca_db';
-const DB_USER = 'root'; // ou o seu usuário
-const DB_PASS = ''; // ou sua senha
-const DB_CONFIG = {
-    dialect: 'mysql', // O tipo de banco que estamos usando
-    host: 'localhost',
-    port: 3306 // A porta padrão do MySQL
-};
+const sequelize = new Sequelize(
+  process.env.DB_NAME || 'gestao_danca',
+  process.env.DB_USER || 'root',
+  process.env.DB_PASS || '',
+  {
+    host: process.env.DB_HOST || 'localhost',
+    dialect: 'mysql',
+    logging: false
+  }
+);
 
-// Cria a conexão com o banco de dados
-const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, DB_CONFIG);
+// Testa a conexão ao iniciar
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('✅ Conexão com MySQL estabelecida com sucesso.');
+  } catch (error) {
+    console.error('❌ Erro ao conectar com MySQL:', error);
+  }
+})();
 
-// Exportamos a conexão para que outros arquivos possam usá-la
 module.exports = sequelize;
