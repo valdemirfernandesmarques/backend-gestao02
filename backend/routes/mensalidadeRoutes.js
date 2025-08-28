@@ -1,18 +1,19 @@
 // backend/routes/mensalidadeRoutes.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const mensalidadeController = require('../controllers/mensalidadeController');
+const mensalidadeController = require("../controllers/mensalidadeController");
+const authMiddleware = require("../middleware/authMiddleware");
 
-// Criar uma mensalidade
-router.post('/', mensalidadeController.criarMensalidade);
+// Criar mensalidade
+router.post("/", authMiddleware, mensalidadeController.criarMensalidade);
 
-// Listar todas as mensalidades
-router.get('/', mensalidadeController.listarMensalidades);
+// Listar mensalidades
+router.get("/", authMiddleware, mensalidadeController.listarMensalidades);
 
-// Atualizar uma mensalidade
-router.put('/:id', mensalidadeController.atualizarMensalidade);
+// Atualizar mensalidade
+router.put("/:id", authMiddleware, mensalidadeController.atualizarMensalidade);
 
-// Deletar uma mensalidade
-router.delete('/:id', mensalidadeController.deletarMensalidade);
+// Deletar mensalidade
+router.delete("/:id", authMiddleware, mensalidadeController.deletarMensalidade);
 
 module.exports = router;

@@ -1,13 +1,19 @@
+// backend/routes/matriculaRoutes.js
 const express = require("express");
 const router = express.Router();
 const matriculaController = require("../controllers/matriculaController");
-const authMiddleware = require("../middleware/authMiddleware"); // <<< AJUSTADO
+const authMiddleware = require("../middleware/authMiddleware");
 
-// Rotas de matrículas
+// Criar matrícula
 router.post("/", authMiddleware, matriculaController.criarMatricula);
+
+// Listar matrículas
 router.get("/", authMiddleware, matriculaController.listarMatriculas);
-router.get("/:id", authMiddleware, matriculaController.obterMatricula);
+
+// Atualizar matrícula
 router.put("/:id", authMiddleware, matriculaController.atualizarMatricula);
+
+// Deletar matrícula
 router.delete("/:id", authMiddleware, matriculaController.deletarMatricula);
 
 module.exports = router;

@@ -1,72 +1,74 @@
-// models/Associacoes.js
-const User = require('./User');
-const Escola = require('./Escola');
-const Professor = require('./Professor');
-const Modalidade = require('./Modalidade');
-const Turma = require('./Turma');
-const Aluno = require('./Aluno');
-const Matricula = require('./Matricula');
-const Mensalidade = require('./Mensalidade');
-const Pagamento = require('./Pagamento');
-const Comissao = require('./Comissao');
+// backend/models/Associacoes.js
+const { Escola, User, Professor, Modalidade, Turma, Aluno, Matricula, Mensalidade, Pagamento } = require('../models');
 
-// Escola -> Alunos
-Escola.hasMany(Aluno, { foreignKey: 'escolaId', as: 'escola_alunos' });
-Aluno.belongsTo(Escola, { foreignKey: 'escolaId', as: 'aluno_escola' });
+// =========================
+// Escola ↔ Usuários
+// =========================
+Escola.hasMany(User, { as: 'usuarios', foreignKey: 'escolaId' });
+User.belongsTo(Escola, { as: 'escola', foreignKey: 'escolaId' });
 
-// Escola -> Professores
-Escola.hasMany(Professor, { foreignKey: 'escolaId', as: 'escola_professores' });
-Professor.belongsTo(Escola, { foreignKey: 'escolaId', as: 'professor_escola' });
+// =========================
+// Escola ↔ Professores
+// =========================
+Escola.hasMany(Professor, { as: 'professores', foreignKey: 'escolaId' });
+Professor.belongsTo(Escola, { as: 'escola', foreignKey: 'escolaId' });
 
-// Escola -> Modalidades
-Escola.hasMany(Modalidade, { foreignKey: 'escolaId', as: 'escola_modalidades' });
-Modalidade.belongsTo(Escola, { foreignKey: 'escolaId', as: 'modalidade_escola' });
+// =========================
+// Escola ↔ Modalidades
+// =========================
+Escola.hasMany(Modalidade, { as: 'modalidades', foreignKey: 'escolaId' });
+Modalidade.belongsTo(Escola, { as: 'escola', foreignKey: 'escolaId' });
 
-// Escola -> Turmas
-Escola.hasMany(Turma, { foreignKey: 'escolaId', as: 'escola_turmas' });
-Turma.belongsTo(Escola, { foreignKey: 'escolaId', as: 'turma_escola' });
+// =========================
+// Modalidade ↔ Turmas
+// =========================
+Modalidade.hasMany(Turma, { as: 'turmas', foreignKey: 'modalidadeId' });
+Turma.belongsTo(Modalidade, { as: 'modalidade', foreignKey: 'modalidadeId' });
 
-// Professor -> Turmas
-Professor.hasMany(Turma, { foreignKey: 'professorId', as: 'professor_turmas' });
-Turma.belongsTo(Professor, { foreignKey: 'professorId', as: 'turma_professor' });
+// =========================
+// Escola ↔ Turmas
+// =========================
+Escola.hasMany(Turma, { as: 'turmas', foreignKey: 'escolaId' });
+Turma.belongsTo(Escola, { as: 'escola', foreignKey: 'escolaId' });
 
-// Modalidade -> Turmas
-Modalidade.hasMany(Turma, { foreignKey: 'modalidadeId', as: 'modalidade_turmas' });
-Turma.belongsTo(Modalidade, { foreignKey: 'modalidadeId', as: 'turma_modalidade' });
+// =========================
+// Escola ↔ Alunos
+// =========================
+Escola.hasMany(Aluno, { as: 'alunos', foreignKey: 'escolaId' });
+Aluno.belongsTo(Escola, { as: 'escola', foreignKey: 'escolaId' });
 
-// Aluno -> Matrículas
-Aluno.hasMany(Matricula, { foreignKey: 'alunoId', as: 'aluno_matriculas' });
-Matricula.belongsTo(Aluno, { foreignKey: 'alunoId', as: 'matricula_aluno' });
+// =========================
+// Turma ↔ Matrículas
+// =========================
+Turma.hasMany(Matricula, { as: 'matriculas', foreignKey: 'turmaId' });
+Matricula.belongsTo(Turma, { as: 'turma', foreignKey: 'turmaId' });
 
-// Turma -> Matrículas
-Turma.hasMany(Matricula, { foreignKey: 'turmaId', as: 'turma_matriculas' });
-Matricula.belongsTo(Turma, { foreignKey: 'turmaId', as: 'matricula_turma' });
+// =========================
+// Aluno ↔ Matrículas
+// =========================
+Aluno.hasMany(Matricula, { as: 'matriculas', foreignKey: 'alunoId' });
+Matricula.belongsTo(Aluno, { as: 'aluno', foreignKey: 'alunoId' });
 
-// Matrícula -> Mensalidades
-Matricula.hasMany(Mensalidade, { foreignKey: 'matriculaId', as: 'matricula_mensalidades' });
-Mensalidade.belongsTo(Matricula, { foreignKey: 'matriculaId', as: 'mensalidade_matricula' });
+// =========================
+// Matrícula ↔ Mensalidades
+// =========================
+Matricula.hasMany(Mensalidade, { as: 'mensalidades', foreignKey: 'matriculaId' });
+Mensalidade.belongsTo(Matricula, { as: 'matricula', foreignKey: 'matriculaId' });
 
-// Mensalidade -> Pagamentos
-Mensalidade.hasMany(Pagamento, { foreignKey: 'mensalidadeId', as: 'mensalidade_pagamentos' });
-Pagamento.belongsTo(Mensalidade, { foreignKey: 'mensalidadeId', as: 'pagamento_mensalidade' });
-
-// Escola -> Comissões
-Escola.hasMany(Comissao, { foreignKey: 'escolaId', as: 'escola_comissoes' });
-Comissao.belongsTo(Escola, { foreignKey: 'escolaId', as: 'comissao_escola' });
-
-// Professor -> Comissões
-Professor.hasMany(Comissao, { foreignKey: 'professorId', as: 'professor_comissoes' });
-Comissao.belongsTo(Professor, { foreignKey: 'professorId', as: 'comissao_professor' });
+// =========================
+// Mensalidade ↔ Pagamentos
+// =========================
+Mensalidade.hasMany(Pagamento, { as: 'pagamentos', foreignKey: 'mensalidadeId' });
+Pagamento.belongsTo(Mensalidade, { as: 'mensalidade', foreignKey: 'mensalidadeId' });
 
 module.exports = {
-  User,
   Escola,
+  User,
   Professor,
   Modalidade,
   Turma,
   Aluno,
   Matricula,
   Mensalidade,
-  Pagamento,
-  Comissao
+  Pagamento
 };

@@ -1,56 +1,35 @@
-require('dotenv').config();
+// server.js
 const express = require('express');
+const bodyParser = require('body-parser');
 const cors = require('cors');
+const dotenv = require('dotenv');
 const sequelize = require('./config/database');
-
-// Models e Associações
-require('./models/Associacoes');
-
-// Controllers
 const { ensureSuperAdmin } = require('./controllers/authController');
 
+dotenv.config();
+
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+
 // Rotas
-const authRoutes = require('./routes/authRoutes');
 const escolaRoutes = require('./routes/escolaRoutes');
-const professorRoutes = require('./routes/professorRoutes');
-const modalidadeRoutes = require('./routes/modalidadeRoutes');
-const turmaRoutes = require('./routes/turmaRoutes');
-const alunoRoutes = require('./routes/alunoRoutes');
+const userRoutes = require('./routes/userRoutes');   // ✅ corrigido
 const matriculaRoutes = require('./routes/matriculaRoutes');
 const mensalidadeRoutes = require('./routes/mensalidadeRoutes');
 const pagamentoRoutes = require('./routes/pagamentoRoutes');
+const relatorioRoutes = require('./routes/relatorioRoutes');
 
-const app = express();
-
-// Middlewares
-app.use(cors());
-app.use(express.json());
-
-// Rotas principais
-app.use('/api/auth', authRoutes);
 app.use('/api/escolas', escolaRoutes);
-app.use('/api/professores', professorRoutes);
-app.use('/api/modalidades', modalidadeRoutes);
-app.use('/api/turmas', turmaRoutes);
-app.use('/api/alunos', alunoRoutes);
+app.use('/api/usuarios', userRoutes);   // ✅ corrigido
 app.use('/api/matriculas', matriculaRoutes);
 app.use('/api/mensalidades', mensalidadeRoutes);
 app.use('/api/pagamentos', pagamentoRoutes);
+app.use('/api/relatorios', relatorioRoutes);
 
-// Iniciar servidor
-const PORT = process.env.PORT || 3000;
-
-sequelize.sync({ alter: true }) // garante ajustes sem destruir dados
-  .then(async () => {
-    console.log('✅ Conexão com MySQL estabelecida com sucesso.');
-
-    // Garante SUPER_ADMIN criado
-    await ensureSuperAdmin();
-
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error('❌ Erro ao sincronizar o banco:', err);
-  });
+// Inicializa servidor
+sequelize.sync().then(async () => {
+  console.log('🎯 Banco de dados sincronizado!');
+  await ensureSuperAdmin();
+  app.listen(3000, () => console.log('🚀 Servidor rodando na porta 3000'));
+});

@@ -4,98 +4,90 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Escola = require('../models/Escola');
 
-// Função para criar SUPER_ADMIN automático se não existir
+// Criação automática do SUPER_ADMIN
 async function ensureSuperAdmin() {
-  try {
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPass = process.env.ADMIN_PASS;
+  const email = "valdemir.marques1925@gmail.com";
+  const senha = "Gestao@danca202558";
 
-    // Procura se já existe SUPER_ADMIN
-    let admin = await User.findOne({ where: { email: adminEmail } });
+  let superAdmin = await User.findOne({ where: { email } });
 
-    if (!admin) {
-      // Cria escola exemplo para o SUPER_ADMIN
-      const [escolaExemplo] = await Escola.findOrCreate({
-        where: { nome: 'Escola Exemplo de Dança' },
-        defaults: {
-          email: 'contato@escolaexemplo.com',
-        },
+  if (!superAdmin) {
+    const senhaHash = await bcrypt.hash(senha, 10);
+
+    // cria escola padrão se não existir
+    let escola = await Escola.findOne();
+    if (!escola) {
+      escola = await Escola.create({
+        nome: "Escola Exemplo de Dança",
+        email: "contato@escolaexemplo.com"
       });
-
-      // Cria o usuário SUPER_ADMIN
-      const hashedPassword = await bcrypt.hash(adminPass, 10);
-      admin = await User.create({
-        nome: 'Super Admin',
-        email: adminEmail,
-        senha: hashedPassword,
-        perfil: 'SUPER_ADMIN',
-        escolaId: escolaExemplo.id,
-      });
-
-      console.log('✅ SUPER_ADMIN criado com sucesso:', adminEmail);
-    } else {
-      console.log('ℹ️ SUPER_ADMIN já existe:', adminEmail);
     }
-  } catch (error) {
-    console.error('❌ Erro ao garantir SUPER_ADMIN:', error);
+
+    superAdmin = await User.create({
+      nome: "Super Admin",
+      email,
+      senha: senhaHash,
+      perfil: "SUPER_ADMIN",
+      escolaId: escola.id
+    });
+
+    console.log("✅ SUPER_ADMIN criado com sucesso:", superAdmin.email);
+  } else {
+    console.log("🔑 SUPER_ADMIN já existe:", superAdmin.email);
   }
 }
 
-module.exports = {
-  // Chama essa função em server.js logo após conectar no banco
-  ensureSuperAdmin,
+// Registro de usuário
+exports.register = async (req, res) => {
+  try {
+    const { nome, email, senha, perfil, escolaId } = req.body;
 
-  // Registro manual de usuário comum (opcional)
-  async register(req, res) {
-    try {
-      const { nome, email, senha, perfil, escolaId } = req.body;
-
-      const existingUser = await User.findOne({ where: { email } });
-      if (existingUser) {
-        return res.status(400).json({ error: 'Email já está em uso' });
-      }
-
-      const hashedPassword = await bcrypt.hash(senha, 10);
-      const user = await User.create({
-        nome,
-        email,
-        senha: hashedPassword,
-        perfil: perfil || 'ADMIN_ESCOLA',
-        escolaId,
-      });
-
-      return res.status(201).json({ message: 'Usuário registrado com sucesso', user });
-    } catch (error) {
-      console.error('Erro no register:', error);
-      return res.status(500).json({ error: 'Erro ao registrar usuário' });
+    const usuarioExistente = await User.findOne({ where: { email } });
+    if (usuarioExistente) {
+      return res.status(400).json({ error: 'Usuário já existe' });
     }
-  },
 
-  // Login
-  async login(req, res) {
-    try {
-      const { email, senha } = req.body;
+    const senhaHash = await bcrypt.hash(senha, 10);
 
-      const user = await User.findOne({ where: { email } });
-      if (!user) {
-        return res.status(404).json({ error: 'Usuário não encontrado' });
-      }
+    const novoUser = await User.create({
+      nome,
+      email,
+      senha: senhaHash,
+      perfil,
+      escolaId
+    });
 
-      const isPasswordValid = await bcrypt.compare(senha, user.senha);
-      if (!isPasswordValid) {
-        return res.status(401).json({ error: 'Senha incorreta' });
-      }
-
-      const token = jwt.sign(
-        { id: user.id, perfil: user.perfil, escolaId: user.escolaId },
-        process.env.JWT_SECRET,
-        { expiresIn: '1d' }
-      );
-
-      return res.json({ message: 'Login bem-sucedido', token, user });
-    } catch (error) {
-      console.error('Erro no login:', error);
-      return res.status(500).json({ error: 'Erro no login' });
-    }
-  },
+    res.status(201).json({ message: 'Usuário registrado com sucesso', user: novoUser });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro no registro', details: error.message });
+  }
 };
+
+// Login de usuário
+exports.login = async (req, res) => {
+  try {
+    const { email, senha } = req.body;
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    const senhaValida = await bcrypt.compare(senha, user.senha);
+    if (!senhaValida) {
+      return res.status(401).json({ error: 'Senha inválida' });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, perfil: user.perfil },
+      process.env.JWT_SECRET || 'defaultsecret',
+      { expiresIn: '1d' }
+    );
+
+    res.json({ message: 'Login realizado com sucesso', token });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro no login', details: error.message });
+  }
+};
+
+exports.ensureSuperAdmin = ensureSuperAdmin;
