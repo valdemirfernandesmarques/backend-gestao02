@@ -1,29 +1,21 @@
 // backend/models/Comissao.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
-const Professor = require('./Professor');
-const Pagamento = require('./Pagamento');
+const { Model } = require("sequelize");
 
-const Comissao = sequelize.define('Comissao', {
-  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-  percentual: {
-    type: DataTypes.FLOAT, // ex.: 0.5 = 50%
-    allowNull: false,
-    defaultValue: 0.5
-  },
-  valor: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false
-  }
-}, {
-  tableName: 'comissoes'
-});
+module.exports = (sequelize, DataTypes) => {
+  class Comissao extends Model {}
 
-// Relacionamentos
-Professor.hasMany(Comissao, { foreignKey: 'professorId', as: 'comissoes' });
-Comissao.belongsTo(Professor, { foreignKey: 'professorId', as: 'professor' });
+  Comissao.init(
+    {
+      pagamentoId: { type: DataTypes.INTEGER, allowNull: false },
+      tipo: { type: DataTypes.STRING, allowNull: false, defaultValue: "TAXA_SISTEMA" },
+      valor: { type: DataTypes.DECIMAL(10, 2), allowNull: false }
+    },
+    {
+      sequelize,
+      modelName: "Comissao",
+      tableName: "comissoes"
+    }
+  );
 
-Pagamento.hasOne(Comissao, { foreignKey: 'pagamentoId', as: 'comissao' });
-Comissao.belongsTo(Pagamento, { foreignKey: 'pagamentoId', as: 'pagamento' });
-
-module.exports = Comissao;
+  return Comissao;
+};

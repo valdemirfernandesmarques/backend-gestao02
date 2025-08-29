@@ -1,29 +1,27 @@
 // backend/models/User.js
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database");
+module.exports = (sequelize, DataTypes) => {
+  const User = sequelize.define("User", {
+    nome: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    email: {
+      type: DataTypes.STRING,
+      unique: true,
+      allowNull: false,
+      validate: {
+        isEmail: true,
+      },
+    },
+    password: { // 👈 usamos SEMPRE "password" para bater com o controller
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    perfil: {
+      type: DataTypes.ENUM("ADMIN", "USER"),
+      defaultValue: "USER",
+    },
+  });
 
-const User = sequelize.define("User", {
-  nome: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-  },
-  senha: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  perfil: {
-    type: DataTypes.ENUM("admin", "professor", "aluno"),
-    defaultValue: "aluno",
-  },
-  escolaId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-  },
-});
-
-module.exports = User;
+  return User;
+};

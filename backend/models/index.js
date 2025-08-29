@@ -1,51 +1,62 @@
 // backend/models/index.js
-const sequelize = require('../config/database');
+const { Sequelize, DataTypes } = require("sequelize");
+require("dotenv").config();
 
-// Importa todos os models
-const Escola = require('./Escola');
-const User = require('./User');
-const Matricula = require('./Matricula');
-const Mensalidade = require('./Mensalidade');
-const Pagamento = require('./Pagamento');
-const Comissao = require('./Comissao');
+// Se DB_PASS estiver vazio, seta como undefined (não envia senha para MySQL)
+const sequelize = new Sequelize(
+  process.env.DB_NAME || "gestao_danca",
+  process.env.DB_USER || "root",
+  process.env.DB_PASS && process.env.DB_PASS.trim() !== "" ? process.env.DB_PASS : undefined,
+  {
+    host: process.env.DB_HOST || "127.0.0.1",
+    dialect: "mysql",
+    logging: false,
+    timezone: "-03:00",
+  }
+);
 
-// ========================
-// Associações
-// ========================
+const db = {};
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
 
-// Escola -> Usuários
-Escola.hasMany(User, { foreignKey: 'escolaId', as: 'usuarios' });
-User.belongsTo(Escola, { foreignKey: 'escolaId', as: 'escola' });
+// ===== Carrega todos os models =====
+db.Escola       = require("./Escola")(sequelize, DataTypes);
+db.User         = require("./User")(sequelize, DataTypes);
+db.Matricula    = require("./Matricula")(sequelize, DataTypes);
+db.Mensalidade  = require("./Mensalidade")(sequelize, DataTypes);
+db.Pagamento    = require("./Pagamento")(sequelize, DataTypes);
+db.Comissao     = require("./Comissao")(sequelize, DataTypes);
+db.Produto      = require("./Produto")(sequelize, DataTypes);
+db.Venda        = require("./Venda")(sequelize, DataTypes);
 
-// Escola -> Matrículas
-Escola.hasMany(Matricula, { foreignKey: 'escolaId', as: 'matriculas' });
-Matricula.belongsTo(Escola, { foreignKey: 'escolaId', as: 'escola' });
+// ======================= ASSOCIAÇÕES =======================
 
-// Matrícula -> Mensalidades
-Matricula.hasMany(Mensalidade, { foreignKey: 'matriculaId', as: 'mensalidades' });
-Mensalidade.belongsTo(Matricula, { foreignKey: 'matriculaId', as: 'matricula' });
+// Escola 1—N Users
+db.Escola.hasMany(db.User, { foreignKey: "escolaId" });
+db.User.belongsTo(db.Escola, { foreignKey: "escolaId" });
 
-// Mensalidade -> Pagamentos
-Mensalidade.hasMany(Pagamento, { foreignKey: 'mensalidadeId', as: 'pagamentos' });
-Pagamento.belongsTo(Mensalidade, { foreignKey: 'mensalidadeId', as: 'mensalidade' });
+// Matricula 1—N Mensalidade
+db.Matricula.hasMany(db.Mensalidade, { foreignKey: "matriculaId" });
+db.Mensalidade.belongsTo(db.Matricula, { foreignKey: "matriculaId" });
 
-// Escola -> Pagamentos (para relatórios financeiros)
-Escola.hasMany(Pagamento, { foreignKey: 'escolaId', as: 'pagamentos' });
-Pagamento.belongsTo(Escola, { foreignKey: 'escolaId', as: 'escola' });
+// Mensalidade 1—N Pagamento
+db.Mensalidade.hasMany(db.Pagamento, { foreignKey: "mensalidadeId" });
+db.Pagamento.belongsTo(db.Matricula, { foreignKey: "matriculaId" });
 
-// Pagamento -> Comissões
-Pagamento.hasMany(Comissao, { foreignKey: 'pagamentoId', as: 'comissoes' });
-Comissao.belongsTo(Pagamento, { foreignKey: 'pagamentoId' }); // ⚠️ sem alias duplicado aqui
+// Escola 1—N Pagamento
+db.Escola.hasMany(db.Pagamento, { foreignKey: "escolaId" });
+db.Pagamento.belongsTo(db.Escola, { foreignKey: "escolaId" });
 
-// ========================
-// Exporta models + conexão
-// ========================
-module.exports = {
-  sequelize,
-  Escola,
-  User,
-  Matricula,
-  Mensalidade,
-  Pagamento,
-  Comissao,
-};
+// Pagamento 1—N Comissao
+db.Pagamento.hasMany(db.Comissao, { foreignKey: "pagamentoId", as: "comissoes" });
+db.Comissao.belongsTo(db.Pagamento, { foreignKey: "pagamentoId" });
+
+// Produto 1—N Venda
+db.Produto.hasMany(db.Venda, { foreignKey: "produtoId" });
+db.Venda.belongsTo(db.Produto, { foreignKey: "produtoId" });
+
+// User 1—N Venda
+db.User.hasMany(db.Venda, { foreignKey: "compradorId", as: "compras" });
+db.Venda.belongsTo(db.User, { foreignKey: "compradorId", as: "comprador" });
+
+module.exports = db;

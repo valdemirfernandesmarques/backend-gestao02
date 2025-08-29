@@ -1,14 +1,11 @@
-// backend/routes/escolaRoutes.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const escolaController = require('../controllers/escolaController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { criarEscola, listarEscolas } = require("../controllers/escolaController");
 
-// Todas as rotas abaixo precisam de login (token válido)
-router.post('/', authMiddleware, escolaController.createEscola);
-router.get('/', authMiddleware, escolaController.getEscolas);
-router.get('/:id', authMiddleware, escolaController.getEscolaById);
-router.put('/:id', authMiddleware, escolaController.updateEscola);
-router.delete('/:id', authMiddleware, escolaController.deleteEscola);
+// Criar escola
+router.post("/", criarEscola);
+
+// Listar escolas
+router.get("/", listarEscolas);
 
 module.exports = router;

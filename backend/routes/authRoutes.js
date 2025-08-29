@@ -1,9 +1,12 @@
-const express = require('express');
+// backend/routes/authRoutes.js
+const express = require("express");
 const router = express.Router();
-const authController = require('../controllers/authController');
+const authController = require("../controllers/authController");
 
-// Rotas públicas
-router.post('/register', authController.register);
-router.post('/login', authController.login);
+// Rota de login
+router.post("/login", authController.login);
+
+// Rota de registro
+router.post("/register", authController.register);
 
 module.exports = router;

@@ -1,19 +1,20 @@
 // backend/models/Matricula.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { Model } = require("sequelize");
 
-const Matricula = sequelize.define('Matricula', {
-  dataMatricula: {
-    type: DataTypes.DATE,
-    allowNull: false,
-    defaultValue: DataTypes.NOW
-  },
-  ativo: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
-  }
-}, {
-  tableName: 'matriculas'
-});
+module.exports = (sequelize, DataTypes) => {
+  class Matricula extends Model {}
 
-module.exports = Matricula;
+  Matricula.init(
+    {
+      alunoNome: { type: DataTypes.STRING, allowNull: true },
+      escolaId: { type: DataTypes.INTEGER, allowNull: true }
+    },
+    {
+      sequelize,
+      modelName: "Matricula",
+      tableName: "matriculas"
+    }
+  );
+
+  return Matricula;
+};

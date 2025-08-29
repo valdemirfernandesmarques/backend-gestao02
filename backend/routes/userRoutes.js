@@ -1,16 +1,14 @@
-// backend/routes/userRoutes.js
 const express = require("express");
 const router = express.Router();
-const userController = require("../controllers/userController");
-const authMiddleware = require("../middleware/authMiddleware");
+const { registerUser, loginUser, getUsers } = require("../controllers/userController");
 
-// Registro de usuário
-router.post("/register", userController.register);
+// Cadastro
+router.post("/register", registerUser);
 
-// Login de usuário
-router.post("/login", userController.login);
+// Login
+router.post("/login", loginUser);
 
-// Perfil do usuário (precisa de token)
-router.get("/profile", authMiddleware, userController.getProfile);
+// Listar usuários
+router.get("/", getUsers);
 
 module.exports = router;

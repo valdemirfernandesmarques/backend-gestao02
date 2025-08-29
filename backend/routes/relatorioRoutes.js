@@ -1,13 +1,15 @@
-// backend/routes/relatorioRoutes.js
 const express = require("express");
 const router = express.Router();
-const relatorioController = require("../controllers/relatorioController");
 const authMiddleware = require("../middleware/authMiddleware");
+const {
+  gerarRelatorioFinanceiro,
+  gerarNotaFiscalSimulada,
+} = require("../controllers/relatorioController");
 
-// Relatório financeiro
-router.get("/financeiro", authMiddleware, relatorioController.relatorioFinanceiro);
+// Relatório Financeiro
+router.get("/financeiro", authMiddleware, gerarRelatorioFinanceiro);
 
-// Emissão simulada de Nota Fiscal
-router.post("/nfe", authMiddleware, relatorioController.gerarNotaFiscal);
+// Nota Fiscal (simulação)
+router.post("/nf", authMiddleware, gerarNotaFiscalSimulada);
 
 module.exports = router;

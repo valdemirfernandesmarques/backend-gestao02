@@ -1,34 +1,21 @@
 // backend/models/Escola.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { Model } = require("sequelize");
 
-const Escola = sequelize.define('Escola', {
-  nome: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  cnpj: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  endereco: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  logoUrl: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  inicioPeriodoTeste: {
-    type: DataTypes.DATE,
-    allowNull: true
-  }
-}, {
-  tableName: 'escolas'
-});
+module.exports = (sequelize, DataTypes) => {
+  class Escola extends Model {}
 
-module.exports = Escola;
+  Escola.init(
+    {
+      nome: { type: DataTypes.STRING, allowNull: false },
+      inicioPeriodoTeste: { type: DataTypes.DATE, allowNull: true },
+      isencaoAtiva: { type: DataTypes.BOOLEAN, defaultValue: false }
+    },
+    {
+      sequelize,
+      modelName: "Escola",
+      tableName: "escolas"
+    }
+  );
+
+  return Escola;
+};
