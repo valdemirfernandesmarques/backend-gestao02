@@ -1,15 +1,16 @@
 const express = require("express");
 const router = express.Router();
-const authMiddleware = require("../middleware/authMiddleware");
+
+const verifyToken = require("../middleware/authMiddleware"); // caminho correto (pasta 'middleware')
 const {
-  gerarRelatorioFinanceiro,
-  gerarNotaFiscalSimulada,
-} = require("../controllers/relatorioController");
+  relatorioFinanceiroEscola,
+  relatorioFinanceiroSuperadmin,
+} = require("../controllers/relatorioController"); // importa pelos MESMOS nomes exportados
 
-// Relatório Financeiro
-router.get("/financeiro", authMiddleware, gerarRelatorioFinanceiro);
+// GET /api/relatorios/financeiro/escola?escolaId=1&inicio=2025-08-01&fim=2025-08-31
+router.get("/financeiro/escola", verifyToken, relatorioFinanceiroEscola);
 
-// Nota Fiscal (simulação)
-router.post("/nf", authMiddleware, gerarNotaFiscalSimulada);
+// GET /api/relatorios/financeiro/superadmin?inicio=2025-08-01&fim=2025-08-31
+router.get("/financeiro/superadmin", verifyToken, relatorioFinanceiroSuperadmin);
 
 module.exports = router;

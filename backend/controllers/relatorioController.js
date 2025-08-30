@@ -1,61 +1,160 @@
-const { Pagamento, Escola } = require("../models");
+const db = require("../models");
+const { Op } = require("sequelize");
 
-// Relatório financeiro
-exports.gerarRelatorioFinanceiro = async (req, res) => {
+// Util: normaliza datas vindo em string YYYY-MM-DD para objetos Date (início/fim do dia)
+function parseDateOrDefault(value, fallback) {
+  if (!value) return fallback;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return fallback;
+  return d;
+}
+
+function startOfDay(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function endOfDay(d) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
+// ===== Escola: consolida Pagamentos + Vendas no período =====
+async function relatorioFinanceiroEscola(req, res) {
   try {
-    const { inicio, fim, escolaId } = req.query;
+    const hoje = new Date();
+    const padraoInicio = startOfDay(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+    const padraoFim = endOfDay(hoje);
 
-    const escola = await Escola.findByPk(escolaId || 1);
-    if (!escola) return res.status(404).json({ error: "Escola não encontrada" });
+    const inicio = startOfDay(parseDateOrDefault(req.query.inicio, padraoInicio));
+    const fim = endOfDay(parseDateOrDefault(req.query.fim, padraoFim));
 
-    const pagamentos = await Pagamento.findAll({
+    // escolaId pode vir do token (req.user.escolaId) ou querystring
+    const escolaId = Number(req.query.escolaId || req.user?.escolaId);
+    if (!escolaId) {
+      return res.status(400).json({ error: "escolaId é obrigatório (no token ou na query)." });
+    }
+
+    // Pagamentos (ex.: mensalidades) no período
+    const pagamentos = await db.Pagamento.findAll({
       where: {
-        escolaId: escola.id,
-        createdAt: { $between: [inicio, fim] },
+        escolaId,
+        createdAt: { [Op.between]: [inicio, fim] },
       },
+      attributes: ["id", "valor", "createdAt"],
+      order: [["id", "ASC"]],
     });
 
-    const receitaBruta = pagamentos.reduce((acc, p) => acc + parseFloat(p.valor), 0);
-    const totalTaxas = 0;
-    const receitaLiquida = receitaBruta - totalTaxas;
+    const totalPagamentos = pagamentos.reduce((acc, p) => acc + Number(p.valor || 0), 0);
 
-    res.json({
-      periodo: { inicio, fim },
-      escola: { id: escola.id, nome: escola.nome },
+    // Vendas de produtos no período (se você atrela venda à escola via usuário/comprador, adapte)
+    const vendas = await db.Venda.findAll({
+      where: {
+        createdAt: { [Op.between]: [inicio, fim] },
+      },
+      include: [
+        { model: db.Produto, attributes: ["id", "nome"] },
+        { model: db.User, attributes: ["id", "nome", "escolaId"] },
+      ],
+      order: [["id", "ASC"]],
+    });
+
+    // Se quiser filtrar por escola através do comprador (caso a relação seja essa)
+    const vendasDaEscola = vendas.filter(v => v.comprador?.escolaId === escolaId);
+
+    const totalVendas = vendasDaEscola.reduce((acc, v) => acc + Number(v.valor || v.total || 0), 0);
+
+    const receitaBruta = totalPagamentos + totalVendas;
+
+    // Cálculo de taxa 1,3% (aplicação real depende da regra de trial;
+    // aqui mostramos o campo e o cálculo — adapte a regra quando o trial expirar).
+    const TAXA = 0.013;
+    const totalTaxas = Math.round(receitaBruta * TAXA * 100) / 100;
+    const receitaLiquida = Math.round((receitaBruta - totalTaxas) * 100) / 100;
+
+    return res.json({
+      periodo: {
+        inicio: inicio.toISOString(),
+        fim: fim.toISOString(),
+      },
+      escola: { id: escolaId },
       receitaBruta,
       totalTaxas,
       receitaLiquida,
-      detalhes: pagamentos.map((p) => ({
-        pagamentoId: p.id,
-        valorBruto: p.valor,
-        taxaAplicada: 0,
-        valorLiquido: p.valor,
-      })),
-    });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao gerar relatório", details: err.message });
-  }
-};
-
-// Simular nota fiscal
-exports.gerarNotaFiscalSimulada = async (req, res) => {
-  try {
-    const { pagamentoId, valor, tipoPessoa, cpfCnpj, razaoSocial, endereco } = req.body;
-
-    res.json({
-      message: "Nota fiscal gerada com sucesso (simulação)",
-      notaFiscal: {
-        numero: "NF-" + Date.now(),
-        pagamentoId,
-        valor: parseFloat(valor).toFixed(2),
-        dataEmissao: new Date(),
-        tipoPessoa,
-        cpfCnpj,
-        razaoSocial,
-        endereco,
+      detalhes: {
+        pagamentos: pagamentos.map(p => ({
+          pagamentoId: p.id,
+          valor: Number(p.valor || 0),
+          data: p.createdAt,
+        })),
+        vendas: vendasDaEscola.map(v => ({
+          vendaId: v.id,
+          produto: v.Produto?.nome || null,
+          valor: Number(v.valor || v.total || 0),
+          data: v.createdAt,
+        })),
       },
     });
   } catch (err) {
-    res.status(500).json({ error: "Erro ao gerar nota fiscal", details: err.message });
+    console.error("❌ Erro no relatorioFinanceiroEscola:", err);
+    return res.status(500).json({ error: "Erro ao gerar relatório financeiro (escola)" });
   }
+}
+
+// ===== Superadmin: consolida todas as escolas =====
+async function relatorioFinanceiroSuperadmin(req, res) {
+  try {
+    const hoje = new Date();
+    const padraoInicio = startOfDay(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+    const padraoFim = endOfDay(hoje);
+
+    const inicio = startOfDay(parseDateOrDefault(req.query.inicio, padraoInicio));
+    const fim = endOfDay(parseDateOrDefault(req.query.fim, padraoFim));
+
+    // Somatório global de pagamentos
+    const pagamentos = await db.Pagamento.findAll({
+      where: { createdAt: { [Op.between]: [inicio, fim] } },
+      attributes: ["id", "valor", "escolaId", "createdAt"],
+      order: [["id", "ASC"]],
+    });
+
+    const totalPagamentos = pagamentos.reduce((acc, p) => acc + Number(p.valor || 0), 0);
+
+    // Somatório global de vendas
+    const vendas = await db.Venda.findAll({
+      where: { createdAt: { [Op.between]: [inicio, fim] } },
+      include: [{ model: db.Produto, attributes: ["id", "nome"] }],
+      order: [["id", "ASC"]],
+    });
+
+    const totalVendas = vendas.reduce((acc, v) => acc + Number(v.valor || v.total || 0), 0);
+
+    const receitaBruta = totalPagamentos + totalVendas;
+    const TAXA = 0.013;
+    const totalTaxas = Math.round(receitaBruta * TAXA * 100) / 100;
+    const receitaLiquida = Math.round((receitaBruta - totalTaxas) * 100) / 100;
+
+    return res.json({
+      periodo: {
+        inicio: inicio.toISOString(),
+        fim: fim.toISOString(),
+      },
+      receitaBruta,
+      totalTaxas,
+      receitaLiquida,
+      resumo: {
+        qtdPagamentos: pagamentos.length,
+        qtdVendas: vendas.length,
+      },
+    });
+  } catch (err) {
+    console.error("❌ Erro no relatorioFinanceiroSuperadmin:", err);
+    return res.status(500).json({ error: "Erro ao gerar relatório financeiro (superadmin)" });
+  }
+}
+
+module.exports = {
+  relatorioFinanceiroEscola,
+  relatorioFinanceiroSuperadmin,
 };

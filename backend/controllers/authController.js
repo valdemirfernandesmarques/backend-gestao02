@@ -1,33 +1,25 @@
 // backend/controllers/authController.js
+const db = require("../models");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const db = require("../models");
+const User = db.User;
 
-// ================================
-// Função de Login
-// ================================
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: "E-mail e senha são obrigatórios" });
-    }
-
-    const user = await db.User.findOne({ where: { email } });
-
+    const user = await User.findOne({ where: { email } });
     if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
+      return res.status(401).json({ error: "Usuário não encontrado" });
     }
 
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
+    const senhaValida = await bcrypt.compare(password, user.password);
+    if (!senhaValida) {
       return res.status(401).json({ error: "Senha inválida" });
     }
 
-    // Gera token JWT
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, perfil: user.perfil },
       process.env.JWT_SECRET,
       { expiresIn: "8h" }
     );
@@ -35,12 +27,7 @@ exports.login = async (req, res) => {
     return res.json({
       message: "Login realizado com sucesso",
       token,
-      user: {
-        id: user.id,
-        nome: user.nome,
-        email: user.email,
-        role: user.role,
-      },
+      user: { id: user.id, nome: user.nome, email: user.email, perfil: user.perfil },
     });
   } catch (error) {
     console.error("❌ Erro no login:", error);
@@ -48,42 +35,20 @@ exports.login = async (req, res) => {
   }
 };
 
-// ================================
-// Função de Registro
-// ================================
-exports.register = async (req, res) => {
+// 🔹 Função que estava faltando
+exports.getProfile = async (req, res) => {
   try {
-    const { nome, email, password, role } = req.body;
-
-    if (!nome || !email || !password) {
-      return res.status(400).json({ error: "Nome, email e senha são obrigatórios" });
-    }
-
-    const userExists = await db.User.findOne({ where: { email } });
-    if (userExists) {
-      return res.status(400).json({ error: "E-mail já cadastrado" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = await db.User.create({
-      nome,
-      email,
-      password: hashedPassword,
-      role: role || "user", // default = user
+    const user = await User.findByPk(req.user.id, {
+      attributes: ["id", "nome", "email", "perfil"],
     });
 
-    return res.status(201).json({
-      message: "Usuário registrado com sucesso",
-      user: {
-        id: newUser.id,
-        nome: newUser.nome,
-        email: newUser.email,
-        role: newUser.role,
-      },
-    });
+    if (!user) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    res.json(user);
   } catch (error) {
-    console.error("❌ Erro no registro:", error);
-    return res.status(500).json({ error: "Erro interno no registro" });
+    console.error("❌ Erro ao buscar perfil:", error);
+    res.status(500).json({ error: "Erro ao buscar perfil" });
   }
 };

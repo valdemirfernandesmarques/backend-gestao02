@@ -1,81 +1,98 @@
-const { Produto, Venda } = require("../models");
+// backend/controllers/estoqueController.js
+const db = require("../models");
+const Produto = db.Produto;
 
-// Criar produto
+/**
+ * Criar um novo produto no estoque
+ */
 exports.criarProduto = async (req, res) => {
   try {
-    const { nome, preco, quantidade } = req.body;
-    const produto = await Produto.create({ nome, preco, quantidade });
-    res.status(201).json(produto);
+    const { nome, descricao, preco, quantidade } = req.body;
+
+    const novoProduto = await Produto.create({
+      nome,
+      descricao,
+      preco,
+      quantidade,
+    });
+
+    res.status(201).json(novoProduto);
   } catch (err) {
-    res.status(500).json({ error: "Erro ao criar produto", details: err.message });
+    console.error("❌ Erro ao criar produto:", err);
+    res.status(500).json({ error: "Erro ao criar produto" });
   }
 };
 
-// Listar produtos
+/**
+ * Listar todos os produtos
+ */
 exports.listarProdutos = async (req, res) => {
   try {
     const produtos = await Produto.findAll();
     res.json(produtos);
   } catch (err) {
-    res.status(500).json({ error: "Erro ao listar produtos", details: err.message });
+    console.error("❌ Erro ao listar produtos:", err);
+    res.status(500).json({ error: "Erro ao listar produtos" });
   }
 };
 
-// Atualizar produto
-exports.atualizarProduto = async (req, res) => {
+/**
+ * Buscar produto por ID
+ */
+exports.getProduto = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, preco, quantidade } = req.body;
-
     const produto = await Produto.findByPk(id);
-    if (!produto) return res.status(404).json({ error: "Produto não encontrado" });
 
-    produto.nome = nome || produto.nome;
-    produto.preco = preco || produto.preco;
-    produto.quantidade = quantidade || produto.quantidade;
-    await produto.save();
+    if (!produto) {
+      return res.status(404).json({ error: "Produto não encontrado" });
+    }
 
     res.json(produto);
   } catch (err) {
-    res.status(500).json({ error: "Erro ao atualizar produto", details: err.message });
+    console.error("❌ Erro ao buscar produto:", err);
+    res.status(500).json({ error: "Erro ao buscar produto" });
   }
 };
 
-// Deletar produto
-exports.deletarProduto = async (req, res) => {
+/**
+ * Atualizar produto
+ */
+exports.atualizarProduto = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, descricao, preco, quantidade } = req.body;
+
+    const produto = await Produto.findByPk(id);
+
+    if (!produto) {
+      return res.status(404).json({ error: "Produto não encontrado" });
+    }
+
+    await produto.update({ nome, descricao, preco, quantidade });
+    res.json(produto);
+  } catch (err) {
+    console.error("❌ Erro ao atualizar produto:", err);
+    res.status(500).json({ error: "Erro ao atualizar produto" });
+  }
+};
+
+/**
+ * Excluir produto
+ */
+exports.excluirProduto = async (req, res) => {
   try {
     const { id } = req.params;
     const produto = await Produto.findByPk(id);
-    if (!produto) return res.status(404).json({ error: "Produto não encontrado" });
+
+    if (!produto) {
+      return res.status(404).json({ error: "Produto não encontrado" });
+    }
 
     await produto.destroy();
-    res.json({ message: "Produto deletado com sucesso" });
+    res.json({ message: "Produto excluído com sucesso" });
   } catch (err) {
-    res.status(500).json({ error: "Erro ao deletar produto", details: err.message });
-  }
-};
-
-// Registrar venda
-exports.registrarVenda = async (req, res) => {
-  try {
-    const { produtoId, quantidadeVendida } = req.body;
-    const produto = await Produto.findByPk(produtoId);
-
-    if (!produto) return res.status(404).json({ error: "Produto não encontrado" });
-    if (produto.quantidade < quantidadeVendida)
-      return res.status(400).json({ error: "Estoque insuficiente" });
-
-    produto.quantidade -= quantidadeVendida;
-    await produto.save();
-
-    const venda = await Venda.create({
-      produtoId,
-      quantidade: quantidadeVendida,
-      valorTotal: quantidadeVendida * produto.preco,
-    });
-
-    res.status(201).json({ message: "Venda registrada com sucesso", venda });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao registrar venda", details: err.message });
+    console.error("❌ Erro ao excluir produto:", err);
+    res.status(500).json({ error: "Erro ao excluir produto" });
   }
 };

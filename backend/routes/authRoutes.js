@@ -2,11 +2,12 @@
 const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authController");
+const verifyToken = require("../middleware/authMiddleware"); // ✅ caminho correto
 
-// Rota de login
+// Login
 router.post("/login", authController.login);
 
-// Rota de registro
-router.post("/register", authController.register);
+// Rota protegida para pegar dados do usuário logado
+router.get("/me", verifyToken, authController.getProfile);
 
 module.exports = router;
