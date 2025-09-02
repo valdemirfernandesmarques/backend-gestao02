@@ -13,13 +13,22 @@ module.exports = (sequelize, DataTypes) => {
         isEmail: true,
       },
     },
-    password: { // 👈 usamos SEMPRE "password" para bater com o controller
+    password: {
       type: DataTypes.STRING,
       allowNull: false,
     },
     perfil: {
-      type: DataTypes.ENUM("ADMIN", "USER"),
+      type: DataTypes.ENUM("SUPER_ADMIN", "ADMIN", "USER"),
+      allowNull: false,
       defaultValue: "USER",
+    },
+    escolaId: {
+      type: DataTypes.INTEGER,
+      allowNull: true, // SUPER_ADMIN não precisa ter escola vinculada
+      references: {
+        model: "Escolas",
+        key: "id",
+      },
     },
   });
 

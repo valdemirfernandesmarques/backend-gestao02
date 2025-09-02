@@ -1,16 +1,18 @@
-// backend/seedAdmin.js
+// backend/seedAdminEscola.js
 require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const db = require("./models");
 
-async function seedAdmin() {
+async function seedAdminEscola() {
   try {
     await db.sequelize.authenticate();
     console.log("✅ Conexão com o banco estabelecida!");
 
-    const email = process.env.ADMIN_EMAIL;
-    const senha = process.env.ADMIN_PASS;
-    const nome = "Super Admin";
+    // Ajuste aqui caso queira mudar depois
+    const email = "admin@escolateste.com";
+    const senha = "123456"; // você pode usar outra senha fixa ou variável de ambiente
+    const nome = "Admin Escola Teste";
+    const escolaId = 2; // id da escola que já existe no banco
 
     // Criptografa a senha
     const hashedPassword = await bcrypt.hash(senha, 10);
@@ -24,25 +26,25 @@ async function seedAdmin() {
         nome,
         email,
         password: hashedPassword,
-        perfil: "SUPER_ADMIN", // ✅ agora reconhece
-        escolaId: null,        // Super Admin não pertence a nenhuma escola
+        perfil: "ADMIN_ESCOLA", // ✅ novo perfil específico
+        escolaId,
       });
-      console.log(`✅ Super Admin criado: ${email}`);
+      console.log(`✅ Admin Escola criado: ${email}`);
     } else {
       // Se já existe, atualiza
       admin.password = hashedPassword;
       admin.nome = nome;
-      admin.perfil = "SUPER_ADMIN"; // ✅ força o perfil correto
-      admin.escolaId = null;
+      admin.perfil = "ADMIN_ESCOLA"; // ✅ garante perfil correto
+      admin.escolaId = escolaId;
       await admin.save();
-      console.log(`🔄 Super Admin atualizado: ${email}`);
+      console.log(`🔄 Admin Escola atualizado: ${email}`);
     }
 
     process.exit(0);
   } catch (error) {
-    console.error("❌ Erro ao criar/atualizar Super Admin:", error);
+    console.error("❌ Erro ao criar/atualizar Admin Escola:", error);
     process.exit(1);
   }
 }
 
-seedAdmin();
+seedAdminEscola();

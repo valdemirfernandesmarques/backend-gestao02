@@ -1,61 +1,85 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const { User } = require("../models");
+const bcrypt = require("bcryptjs");
 
-// Registrar usuário
-exports.registerUser = async (req, res) => {
+// Criar usuário
+exports.criarUsuario = async (req, res) => {
   try {
-    const { nome, email, senha, perfil, escolaId } = req.body;
+    const { nome, email, password, perfil, escolaId } = req.body;
 
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ error: "Usuário já existe" });
+    // Verifica se o e-mail já existe
+    const userExistente = await User.findOne({ where: { email } });
+    if (userExistente) {
+      return res.status(400).json({ message: "E-mail já cadastrado" });
     }
 
-    const hashedPassword = await bcrypt.hash(senha, 10);
-    const user = await User.create({
+    // Criptografar senha
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const novoUsuario = await User.create({
       nome,
       email,
-      senha: hashedPassword,
-      perfil: perfil || "aluno",
-      escolaId: escolaId || 1,
+      password: hashedPassword,
+      perfil,
+      escolaId,
     });
 
-    res.status(201).json({ message: "Usuário registrado com sucesso", user });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao registrar usuário", details: err.message });
+    res.status(201).json(novoUsuario);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao criar usuário", error });
   }
 };
 
-// Login usuário
-exports.loginUser = async (req, res) => {
+// Listar todos os usuários
+exports.listarUsuarios = async (req, res) => {
   try {
-    const { email, senha } = req.body;
-    const user = await User.findOne({ where: { email } });
-
-    if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
-
-    const isMatch = await bcrypt.compare(senha, user.senha);
-    if (!isMatch) return res.status(401).json({ error: "Senha incorreta" });
-
-    const token = jwt.sign(
-      { id: user.id, email: user.email, perfil: user.perfil },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    res.json({ message: "Login realizado com sucesso", token });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao realizar login", details: err.message });
+    const usuarios = await User.findAll();
+    res.json(usuarios);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao listar usuários", error });
   }
 };
 
-// Listar usuários
-exports.getUsers = async (req, res) => {
+// Atualizar usuário
+exports.atualizarUsuario = async (req, res) => {
   try {
-    const users = await User.findAll();
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao listar usuários", details: err.message });
+    const { id } = req.params;
+    const { nome, email, password, perfil, escolaId } = req.body;
+
+    const usuario = await User.findByPk(id);
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
+    }
+
+    if (password) {
+      usuario.password = await bcrypt.hash(password, 10);
+    }
+
+    usuario.nome = nome || usuario.nome;
+    usuario.email = email || usuario.email;
+    usuario.perfil = perfil || usuario.perfil;
+    usuario.escolaId = escolaId !== undefined ? escolaId : usuario.escolaId;
+
+    await usuario.save();
+
+    res.json(usuario);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao atualizar usuário", error });
+  }
+};
+
+// Deletar usuário
+exports.deletarUsuario = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const usuario = await User.findByPk(id);
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
+    }
+
+    await usuario.destroy();
+    res.json({ message: "Usuário removido com sucesso" });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao deletar usuário", error });
   }
 };

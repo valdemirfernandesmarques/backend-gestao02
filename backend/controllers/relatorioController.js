@@ -1,3 +1,4 @@
+// controllers/relatorioController.js
 const db = require("../models");
 const { Op } = require("sequelize");
 
@@ -14,6 +15,7 @@ function startOfDay(d) {
   x.setHours(0, 0, 0, 0);
   return x;
 }
+
 function endOfDay(d) {
   const x = new Date(d);
   x.setHours(23, 59, 59, 999);
@@ -48,27 +50,25 @@ async function relatorioFinanceiroEscola(req, res) {
 
     const totalPagamentos = pagamentos.reduce((acc, p) => acc + Number(p.valor || 0), 0);
 
-    // Vendas de produtos no período (se você atrela venda à escola via usuário/comprador, adapte)
+    // Vendas de produtos no período
     const vendas = await db.Venda.findAll({
       where: {
         createdAt: { [Op.between]: [inicio, fim] },
       },
       include: [
-        { model: db.Produto, attributes: ["id", "nome"] },
-        { model: db.User, attributes: ["id", "nome", "escolaId"] },
+        { model: db.Produto, attributes: ["id", "nome", "escolaId"] },
+        { model: db.User, attributes: ["id", "nome", "escolaId"], as: "comprador" },
       ],
       order: [["id", "ASC"]],
     });
 
-    // Se quiser filtrar por escola através do comprador (caso a relação seja essa)
-    const vendasDaEscola = vendas.filter(v => v.comprador?.escolaId === escolaId);
+    // Filtra vendas da escola específica
+    const vendasDaEscola = vendas.filter(v => v.produto?.escolaId === escolaId);
 
-    const totalVendas = vendasDaEscola.reduce((acc, v) => acc + Number(v.valor || v.total || 0), 0);
-
+    const totalVendas = vendasDaEscola.reduce((acc, v) => acc + Number(v.valorTotal || 0), 0);
     const receitaBruta = totalPagamentos + totalVendas;
 
-    // Cálculo de taxa 1,3% (aplicação real depende da regra de trial;
-    // aqui mostramos o campo e o cálculo — adapte a regra quando o trial expirar).
+    // Cálculo de taxa 1,3%
     const TAXA = 0.013;
     const totalTaxas = Math.round(receitaBruta * TAXA * 100) / 100;
     const receitaLiquida = Math.round((receitaBruta - totalTaxas) * 100) / 100;
@@ -90,8 +90,8 @@ async function relatorioFinanceiroEscola(req, res) {
         })),
         vendas: vendasDaEscola.map(v => ({
           vendaId: v.id,
-          produto: v.Produto?.nome || null,
-          valor: Number(v.valor || v.total || 0),
+          produto: v.produto?.nome || null,
+          valor: Number(v.valorTotal || 0),
           data: v.createdAt,
         })),
       },
@@ -128,7 +128,7 @@ async function relatorioFinanceiroSuperadmin(req, res) {
       order: [["id", "ASC"]],
     });
 
-    const totalVendas = vendas.reduce((acc, v) => acc + Number(v.valor || v.total || 0), 0);
+    const totalVendas = vendas.reduce((acc, v) => acc + Number(v.valorTotal || 0), 0);
 
     const receitaBruta = totalPagamentos + totalVendas;
     const TAXA = 0.013;

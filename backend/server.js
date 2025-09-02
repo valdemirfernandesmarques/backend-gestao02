@@ -60,7 +60,7 @@ async function criarSuperAdmin() {
         nome: "Super Admin",
         email: adminEmail,
         password: hash,
-        perfil: "admin",
+        perfil: "ADMIN", // ✅ Corrigido para maiúsculo
         escolaId: 1, // pode ajustar se necessário
       });
       console.log(`✅ Super Admin criado: ${adminEmail}`);

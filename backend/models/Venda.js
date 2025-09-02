@@ -1,3 +1,4 @@
+// models/venda.js
 const { Model, DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
@@ -5,6 +6,9 @@ module.exports = (sequelize) => {
     static associate(models) {
       // Uma venda pertence a um produto
       Venda.belongsTo(models.Produto, { foreignKey: "produtoId", as: "produto" });
+
+      // Uma venda pertence a um comprador (usuário)
+      Venda.belongsTo(models.User, { foreignKey: "compradorId", as: "comprador" });
     }
   }
 
@@ -23,6 +27,7 @@ module.exports = (sequelize) => {
       sequelize,
       modelName: "Venda",
       tableName: "vendas",
+      timestamps: true, // garante createdAt e updatedAt
     }
   );
 

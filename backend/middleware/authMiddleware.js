@@ -8,7 +8,7 @@ function verifyToken(req, res, next) {
     return res.status(403).json({ error: "Token não fornecido" });
   }
 
-  // Bearer <token>
+  // Formato esperado: "Bearer <token>"
   const tokenPart = token.split(" ")[1];
 
   try {
@@ -20,4 +20,4 @@ function verifyToken(req, res, next) {
   }
 }
 
-module.exports = verifyToken;
+module.exports = verifyToken; // ✅ exporta a função diretamente

@@ -1,3 +1,4 @@
+// backend/models/produto.js
 const { Model, DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
@@ -22,6 +23,10 @@ module.exports = (sequelize) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
+      },
+      escolaId: {
+        type: DataTypes.INTEGER,
+        allowNull: false, // obrigatório para relacionar com a escola
       },
     },
     {
