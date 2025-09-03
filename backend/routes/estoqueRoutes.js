@@ -1,22 +1,9 @@
-// backend/routes/estoqueRoutes.js
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const estoqueController = require("../controllers/estoqueController");
-const verifyToken = require("../middleware/authMiddleware"); // ✅ middleware correto
+const estoqueController = require('../controllers/estoqueController');
+const auth = require('../middleware/authMiddleware'); // corrigido
 
-// Criar produto
-router.post("/", verifyToken, estoqueController.criarProduto);
-
-// Listar todos os produtos
-router.get("/", verifyToken, estoqueController.listarProdutos);
-
-// Obter produto por ID
-router.get("/:id", verifyToken, estoqueController.getProduto);
-
-// Atualizar produto
-router.put("/:id", verifyToken, estoqueController.atualizarProduto);
-
-// Excluir produto
-router.delete("/:id", verifyToken, estoqueController.excluirProduto);
+router.get('/produtos', auth, estoqueController.listarProdutos);
+router.patch('/produto/:id', auth, estoqueController.atualizarProduto);
 
 module.exports = router;

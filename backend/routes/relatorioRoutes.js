@@ -1,16 +1,9 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
+const relatorioController = require('../controllers/relatorioController');
+const auth = require('../middleware/authMiddleware'); // corrigido
 
-const verifyToken = require("../middleware/authMiddleware"); // caminho correto (pasta 'middleware')
-const {
-  relatorioFinanceiroEscola,
-  relatorioFinanceiroSuperadmin,
-} = require("../controllers/relatorioController"); // importa pelos MESMOS nomes exportados
-
-// GET /api/relatorios/financeiro/escola?escolaId=1&inicio=2025-08-01&fim=2025-08-31
-router.get("/financeiro/escola", verifyToken, relatorioFinanceiroEscola);
-
-// GET /api/relatorios/financeiro/superadmin?inicio=2025-08-01&fim=2025-08-31
-router.get("/financeiro/superadmin", verifyToken, relatorioFinanceiroSuperadmin);
+router.get('/financeiro/escola', auth, relatorioController.relatorioFinanceiroEscola);
+router.get('/financeiro/geral', auth, relatorioController.relatorioFinanceiroGeral);
 
 module.exports = router;

@@ -5,15 +5,21 @@ exports.criar = async (req, res) => {
   try {
     const { nome, sku, precoVenda, custo, quantidade, ativo, escolaId } = req.body;
 
+    // Definir escolaId a partir do corpo ou do usuário autenticado
     const escolaIdFinal = escolaId || req.user?.escolaId;
     if (!escolaIdFinal) {
       return res.status(400).json({ error: 'escolaId é obrigatório (no corpo ou pelo usuário autenticado)' });
     }
 
+    // Valida campos obrigatórios
+    if (precoVenda === undefined || precoVenda === null) {
+      return res.status(400).json({ error: 'precoVenda é obrigatório' });
+    }
+
     const produto = await Produto.create({
       nome,
       sku,
-      precoVenda,
+      preco: precoVenda, // Mapeado para o campo do model
       custo,
       quantidade: quantidade ?? 0,
       ativo: ativo ?? true,
@@ -54,7 +60,17 @@ exports.atualizar = async (req, res) => {
     const produto = await Produto.findByPk(req.params.id);
     if (!produto) return res.status(404).json({ error: 'Produto não encontrado' });
 
-    await produto.update(req.body);
+    // Atualiza campos permitidos
+    const { nome, sku, precoVenda, custo, quantidade, ativo } = req.body;
+    await produto.update({
+      nome: nome ?? produto.nome,
+      sku: sku ?? produto.sku,
+      preco: precoVenda ?? produto.preco,
+      custo: custo ?? produto.custo,
+      quantidade: quantidade ?? produto.quantidade,
+      ativo: ativo ?? produto.ativo,
+    });
+
     res.json({ message: 'Produto atualizado com sucesso', produto });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao atualizar produto', details: error.message });

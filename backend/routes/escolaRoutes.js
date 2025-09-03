@@ -1,27 +1,21 @@
-// backend/routes/escolaRoutes.js
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const {
-  criarEscola,
-  listarEscolas,
-  obterEscola,
-  atualizarEscola,
-  deletarEscola,
-} = require("../controllers/escolaController");
+const escolaController = require('../controllers/escolaController');
+const auth = require('../middleware/authMiddleware');
 
 // Criar escola
-router.post("/", criarEscola);
+router.post('/', auth, escolaController.criar);
 
-// Listar todas as escolas
-router.get("/", listarEscolas);
+// Listar escolas
+router.get('/', auth, escolaController.listar);
 
-// Obter uma escola pelo ID
-router.get("/:id", obterEscola);
+// Obter escola por ID
+router.get('/:id', auth, escolaController.obter);
 
-// Atualizar uma escola pelo ID
-router.put("/:id", atualizarEscola);
+// Atualizar escola
+router.put('/:id', auth, escolaController.atualizar);
 
-// Deletar uma escola pelo ID
-router.delete("/:id", deletarEscola);
+// Remover escola
+router.delete('/:id', auth, escolaController.remover);
 
 module.exports = router;

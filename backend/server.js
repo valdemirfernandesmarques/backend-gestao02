@@ -1,9 +1,6 @@
-// backend/server.js
 const express = require("express");
 const cors = require("cors");
-const { Sequelize } = require("sequelize");
 const db = require("./models");
-const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
 const app = express();
@@ -11,42 +8,22 @@ app.use(cors());
 app.use(express.json());
 
 // ================================
-// Conexão com banco de dados
-// ================================
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASS && process.env.DB_PASS.trim() !== "" ? process.env.DB_PASS : null,
-  {
-    host: process.env.DB_HOST,
-    dialect: "mysql",
-    logging: false,
-  }
-);
-
-sequelize
-  .authenticate()
-  .then(() => console.log("✅ Conexão com MySQL estabelecida com sucesso."))
-  .catch((err) => console.error("❌ Erro ao conectar no MySQL:", err));
-
-// ================================
 // Rotas
 // ================================
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const escolaRoutes = require("./routes/escolaRoutes");
-const relatorioRoutes = require("./routes/relatorioRoutes");
-const estoqueRoutes = require("./routes/estoqueRoutes");
+const produtoRoutes = require("./routes/produtoRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/escolas", escolaRoutes);
-app.use("/api/relatorios", relatorioRoutes);
-app.use("/api/estoque", estoqueRoutes);
+app.use("/api/produtos", produtoRoutes);
 
 // ================================
 // Criar Super Admin automaticamente
 // ================================
+const bcrypt = require("bcryptjs");
 async function criarSuperAdmin() {
   try {
     const adminEmail = process.env.ADMIN_EMAIL;
@@ -60,8 +37,8 @@ async function criarSuperAdmin() {
         nome: "Super Admin",
         email: adminEmail,
         password: hash,
-        perfil: "ADMIN", // ✅ Corrigido para maiúsculo
-        escolaId: 1, // pode ajustar se necessário
+        perfil: "SUPER_ADMIN",
+        escolaId: null,
       });
       console.log(`✅ Super Admin criado: ${adminEmail}`);
     } else {
@@ -81,13 +58,8 @@ db.sequelize
   .sync({ alter: true })
   .then(async () => {
     console.log("🎯 Banco de dados sincronizado!");
-
-    // Garante que o Super Admin exista
     await criarSuperAdmin();
-
-    app.listen(PORT, () =>
-      console.log(`🚀 Servidor rodando na porta ${PORT}`)
-    );
+    app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
   })
   .catch((err) => {
     console.error("❌ Erro ao sincronizar banco:", err);

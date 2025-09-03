@@ -1,73 +1,54 @@
-// backend/controllers/escolaController.js
-const { Escola } = require("../models");
+const { Escola } = require('../models');
 
-// Criar
-exports.criarEscola = async (req, res) => {
+exports.criar = async (req, res) => {
   try {
     const { nome, isencaoAtiva } = req.body;
-    const escola = await Escola.create({ nome, isencaoAtiva });
+    const escola = await Escola.create({ nome, isencaoAtiva: isencaoAtiva ?? false });
     res.status(201).json(escola);
   } catch (err) {
-    console.error("Erro ao criar escola:", err);
-    res.status(500).json({ message: "Erro interno no servidor" });
+    res.status(500).json({ error: 'Erro ao criar escola', details: err.message });
   }
 };
 
-// Listar todas
-exports.listarEscolas = async (req, res) => {
+exports.listar = async (req, res) => {
   try {
     const escolas = await Escola.findAll();
     res.json(escolas);
   } catch (err) {
-    console.error("Erro ao listar escolas:", err);
-    res.status(500).json({ message: "Erro interno no servidor" });
+    res.status(500).json({ error: 'Erro ao listar escolas', details: err.message });
   }
 };
 
-// Obter por ID
-exports.obterEscola = async (req, res) => {
+exports.obter = async (req, res) => {
   try {
-    const { id } = req.params;
-    const escola = await Escola.findByPk(id);
-    if (!escola) return res.status(404).json({ message: "Escola não encontrada" });
+    const escola = await Escola.findByPk(req.params.id);
+    if (!escola) return res.status(404).json({ error: 'Escola não encontrada' });
     res.json(escola);
   } catch (err) {
-    console.error("Erro ao buscar escola:", err);
-    res.status(500).json({ message: "Erro interno no servidor" });
+    res.status(500).json({ error: 'Erro ao obter escola', details: err.message });
   }
 };
 
-// Atualizar
-exports.atualizarEscola = async (req, res) => {
+exports.atualizar = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { nome, isencaoAtiva } = req.body;
+    const escola = await Escola.findByPk(req.params.id);
+    if (!escola) return res.status(404).json({ error: 'Escola não encontrada' });
 
-    const escola = await Escola.findByPk(id);
-    if (!escola) return res.status(404).json({ message: "Escola não encontrada" });
-
-    escola.nome = nome ?? escola.nome;
-    escola.isencaoAtiva = isencaoAtiva ?? escola.isencaoAtiva;
-
-    await escola.save();
-    res.json(escola);
+    await escola.update(req.body);
+    res.json({ message: 'Escola atualizada com sucesso', escola });
   } catch (err) {
-    console.error("Erro ao atualizar escola:", err);
-    res.status(500).json({ message: "Erro interno no servidor" });
+    res.status(500).json({ error: 'Erro ao atualizar escola', details: err.message });
   }
 };
 
-// Deletar
-exports.deletarEscola = async (req, res) => {
+exports.remover = async (req, res) => {
   try {
-    const { id } = req.params;
-    const escola = await Escola.findByPk(id);
-    if (!escola) return res.status(404).json({ message: "Escola não encontrada" });
+    const escola = await Escola.findByPk(req.params.id);
+    if (!escola) return res.status(404).json({ error: 'Escola não encontrada' });
 
     await escola.destroy();
-    res.json({ message: "Escola removida com sucesso" });
+    res.json({ message: 'Escola removida com sucesso' });
   } catch (err) {
-    console.error("Erro ao deletar escola:", err);
-    res.status(500).json({ message: "Erro interno no servidor" });
+    res.status(500).json({ error: 'Erro ao remover escola', details: err.message });
   }
 };
