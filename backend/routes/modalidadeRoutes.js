@@ -1,10 +1,9 @@
-// backend/routes/modalidadeRoutes.js
 const express = require('express');
 const router = express.Router();
+const authMiddleware = require('../middleware/authMiddleware'); // Corrigido import
 const modalidadeController = require('../controllers/modalidadeController');
-const authMiddleware = require('../middleware/authMiddleware');
 
-// Todas as rotas exigem login
+// Todas as rotas exigem login e validação de perfil dentro do controller
 router.post('/', authMiddleware, modalidadeController.createModalidade);
 router.get('/', authMiddleware, modalidadeController.getModalidades);
 router.get('/:id', authMiddleware, modalidadeController.getModalidadeById);

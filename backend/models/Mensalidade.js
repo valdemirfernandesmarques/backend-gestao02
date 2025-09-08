@@ -1,25 +1,52 @@
 // backend/models/Mensalidade.js
-const { Model } = require("sequelize");
-
 module.exports = (sequelize, DataTypes) => {
-  class Mensalidade extends Model {}
-
-  Mensalidade.init(
+  const Mensalidade = sequelize.define(
+    'Mensalidade',
     {
-      matriculaId: { type: DataTypes.INTEGER, allowNull: false },
-      valor: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
-      dataVencimento: { type: DataTypes.DATE, allowNull: false },
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      valor: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+      },
+      dataVencimento: {
+        type: DataTypes.DATE,
+        allowNull: false,
+      },
       status: {
-        type: DataTypes.ENUM("ABERTA", "PAGA", "ATRASADA"),
-        defaultValue: "ABERTA"
-      }
+        type: DataTypes.ENUM('ATIVA', 'PAGA', 'CANCELADA', 'PENDENTE'),
+        allowNull: false,
+        defaultValue: 'ATIVA',
+      },
+      // Definindo explicitamente a FK aqui melhora a sincronização
+      matriculaId: {
+        type: DataTypes.INTEGER,
+        allowNull: false, // não permite "órfãos"
+        references: {
+          model: 'Matriculas',
+          key: 'id',
+        },
+      },
     },
     {
-      sequelize,
-      modelName: "Mensalidade",
-      tableName: "mensalidades"
+      tableName: 'Mensalidades',
+      timestamps: true,
     }
   );
+
+  Mensalidade.associate = (models) => {
+    // Quando a associação é declarada aqui com onDelete/onUpdate,
+    // o Sequelize tende a gerar a FK com as ações corretas.
+    Mensalidade.belongsTo(models.Matricula, {
+      foreignKey: 'matriculaId',
+      as: 'matricula',
+      onDelete: 'RESTRICT', // previne exclusão da matrícula enquanto houver mensalidades
+      onUpdate: 'CASCADE',
+    });
+  };
 
   return Mensalidade;
 };

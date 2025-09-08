@@ -4,49 +4,56 @@ const jwt = require('jsonwebtoken');
 
 exports.login = async (req, res) => {
   try {
-    const { email, senha } = req.body;
+    const { email, password } = req.body;
 
-    if (!email || !senha) {
+    // Validação básica
+    if (!email || !password) {
       return res.status(400).json({ error: 'Email e senha são obrigatórios' });
     }
 
-    const user = await User.findOne({
-      where: { email },
-      attributes: ['id', 'nome', 'email', 'perfil', 'escolaId', 'password']
-    });
-
+    // Procura o usuário pelo email
+    const user = await User.findOne({ where: { email } });
     if (!user) {
-      return res.status(401).json({ error: 'Usuário ou senha inválidos' });
+      return res.status(401).json({ error: 'Usuário não encontrado' });
     }
 
-    if (!user.password) {
-      return res.status(500).json({ error: 'Erro interno: senha do usuário não encontrada' });
-    }
-
-    const senhaValida = await bcrypt.compare(senha, user.password);
+    // Compara a senha fornecida com a senha hash do banco
+    const senhaValida = await bcrypt.compare(password, user.password);
     if (!senhaValida) {
-      return res.status(401).json({ error: 'Usuário ou senha inválidos' });
+      return res.status(401).json({ error: 'Senha incorreta' });
     }
 
+    // Flag para verificar isenção de taxa (caso queira usar em pagamentos)
+    const isIsentoTaxa = user.email === 'admin@escolateste.com';
+
+    // Gera o token JWT
     const token = jwt.sign(
-      { id: user.id, email: user.email, perfil: user.perfil, escolaId: user.escolaId || null },
+      {
+        id: user.id,
+        email: user.email,
+        perfil: user.perfil,
+        escolaId: user.escolaId,
+        isIsentoTaxa,
+      },
       process.env.JWT_SECRET || 'segredo123',
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
+    // Retorna dados do usuário e token
     res.json({
       message: 'Login realizado com sucesso',
       token,
       user: {
         id: user.id,
-        nome: user.nome,
         email: user.email,
         perfil: user.perfil,
-        escolaId: user.escolaId || null,
-      },
+        escolaId: user.escolaId,
+        nome: user.nome,
+        isIsentoTaxa,
+      }
     });
   } catch (err) {
     console.error('Erro no login:', err);
-    res.status(500).json({ message: 'Erro no servidor' });
+    res.status(500).json({ error: 'Erro interno no login' });
   }
 };

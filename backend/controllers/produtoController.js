@@ -5,13 +5,25 @@ exports.criar = async (req, res) => {
   try {
     const { nome, sku, precoVenda, custo, quantidade, ativo, escolaId } = req.body;
 
-    // Definir escolaId a partir do corpo ou do usuário autenticado
-    const escolaIdFinal = escolaId || req.user?.escolaId;
-    if (!escolaIdFinal) {
-      return res.status(400).json({ error: 'escolaId é obrigatório (no corpo ou pelo usuário autenticado)' });
+    let escolaIdFinal;
+
+    // SUPER_ADMIN pode criar produtos em qualquer escola (escolaId fornecido no body)
+    if (req.user.perfil === 'SUPER_ADMIN') {
+      if (!escolaId) {
+        return res.status(400).json({ error: 'SUPER_ADMIN precisa informar escolaId para criar produto' });
+      }
+      escolaIdFinal = escolaId;
     }
 
-    // Valida campos obrigatórios
+    // ADMIN_ESCOLA só pode criar na própria escola
+    if (req.user.perfil === 'ADMIN_ESCOLA') {
+      escolaIdFinal = req.user.escolaId;
+    }
+
+    if (!escolaIdFinal) {
+      return res.status(400).json({ error: 'escolaId é obrigatório' });
+    }
+
     if (precoVenda === undefined || precoVenda === null) {
       return res.status(400).json({ error: 'precoVenda é obrigatório' });
     }
@@ -19,7 +31,7 @@ exports.criar = async (req, res) => {
     const produto = await Produto.create({
       nome,
       sku,
-      preco: precoVenda, // Mapeado para o campo do model
+      preco: precoVenda,
       custo,
       quantidade: quantidade ?? 0,
       ativo: ativo ?? true,
@@ -34,9 +46,13 @@ exports.criar = async (req, res) => {
 
 exports.listar = async (req, res) => {
   try {
-    const escolaId = req.query.escolaId || req.user?.escolaId;
-    const where = {};
-    if (escolaId) where.escolaId = escolaId;
+    let where = {};
+
+    if (req.user.perfil === 'ADMIN_ESCOLA') {
+      where.escolaId = req.user.escolaId;
+    } else if (req.user.perfil === 'SUPER_ADMIN' && req.query.escolaId) {
+      where.escolaId = req.query.escolaId;
+    }
 
     const produtos = await Produto.findAll({ where });
     res.json(produtos);
@@ -49,6 +65,11 @@ exports.obter = async (req, res) => {
   try {
     const produto = await Produto.findByPk(req.params.id);
     if (!produto) return res.status(404).json({ error: 'Produto não encontrado' });
+
+    if (req.user.perfil === 'ADMIN_ESCOLA' && produto.escolaId !== req.user.escolaId) {
+      return res.status(403).json({ error: 'Acesso negado a este produto' });
+    }
+
     res.json(produto);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao obter produto', details: error.message });
@@ -60,7 +81,10 @@ exports.atualizar = async (req, res) => {
     const produto = await Produto.findByPk(req.params.id);
     if (!produto) return res.status(404).json({ error: 'Produto não encontrado' });
 
-    // Atualiza campos permitidos
+    if (req.user.perfil === 'ADMIN_ESCOLA' && produto.escolaId !== req.user.escolaId) {
+      return res.status(403).json({ error: 'Acesso negado a este produto' });
+    }
+
     const { nome, sku, precoVenda, custo, quantidade, ativo } = req.body;
     await produto.update({
       nome: nome ?? produto.nome,
@@ -83,6 +107,10 @@ exports.ajustarEstoque = async (req, res) => {
     const produto = await Produto.findByPk(req.params.id);
     if (!produto) return res.status(404).json({ error: 'Produto não encontrado' });
 
+    if (req.user.perfil === 'ADMIN_ESCOLA' && produto.escolaId !== req.user.escolaId) {
+      return res.status(403).json({ error: 'Acesso negado a este produto' });
+    }
+
     produto.quantidade = quantidade;
     await produto.save();
 
@@ -96,6 +124,10 @@ exports.remover = async (req, res) => {
   try {
     const produto = await Produto.findByPk(req.params.id);
     if (!produto) return res.status(404).json({ error: 'Produto não encontrado' });
+
+    if (req.user.perfil === 'ADMIN_ESCOLA' && produto.escolaId !== req.user.escolaId) {
+      return res.status(403).json({ error: 'Acesso negado a este produto' });
+    }
 
     await produto.destroy();
     res.json({ message: 'Produto removido com sucesso' });

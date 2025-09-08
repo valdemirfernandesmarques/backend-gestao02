@@ -1,20 +1,30 @@
 // backend/models/Matricula.js
-const { Model } = require("sequelize");
-
 module.exports = (sequelize, DataTypes) => {
-  class Matricula extends Model {}
-
-  Matricula.init(
-    {
-      alunoNome: { type: DataTypes.STRING, allowNull: true },
-      escolaId: { type: DataTypes.INTEGER, allowNull: true }
+  const Matricula = sequelize.define('Matricula', {
+    dataInicio: {
+      type: DataTypes.DATE,
+      allowNull: false,
     },
-    {
-      sequelize,
-      modelName: "Matricula",
-      tableName: "matriculas"
-    }
-  );
+    status: {
+      type: DataTypes.STRING,
+      defaultValue: 'ATIVA',
+    },
+  });
+
+  Matricula.associate = (models) => {
+    Matricula.belongsTo(models.Aluno, {
+      foreignKey: 'alunoId',
+      as: 'aluno',
+    });
+    Matricula.belongsTo(models.Escola, {
+      foreignKey: 'escolaId',
+      as: 'escola',
+    });
+    Matricula.hasMany(models.Mensalidade, {
+      foreignKey: 'matriculaId',
+      as: 'mensalidades',
+    });
+  };
 
   return Matricula;
 };

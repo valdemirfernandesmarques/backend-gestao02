@@ -1,23 +1,26 @@
 // backend/models/Pagamento.js
-const { Model } = require("sequelize");
-
 module.exports = (sequelize, DataTypes) => {
-  class Pagamento extends Model {}
-
-  Pagamento.init(
-    {
-      mensalidadeId: { type: DataTypes.INTEGER, allowNull: true },
-      escolaId: { type: DataTypes.INTEGER, allowNull: true }, // usado no relatório por escola
-      valor: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
-      dataPagamento: { type: DataTypes.DATE, allowNull: false },
-      metodo: { type: DataTypes.STRING, allowNull: true } // 'PIX', 'CARTAO', etc.
+  return sequelize.define("Pagamento", {
+    mensalidadeId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
-    {
-      sequelize,
-      modelName: "Pagamento",
-      tableName: "pagamentos"
-    }
-  );
-
-  return Pagamento;
+    escolaId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    valor: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+    },
+    dataPagamento: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+    metodo: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+  });
 };

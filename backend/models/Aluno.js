@@ -1,22 +1,23 @@
 // backend/models/Aluno.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+module.exports = (sequelize, DataTypes) => {
+  const Aluno = sequelize.define('Aluno', {
+    nome: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    email: {
+      type: DataTypes.STRING,
+      unique: true,
+    },
+    telefone: DataTypes.STRING,
+  });
 
-const Aluno = sequelize.define('Aluno', {
-  nome: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  dataNascimento: {
-    type: DataTypes.DATE,
-    allowNull: true
-  },
-  emailResponsavel: {
-    type: DataTypes.STRING,
-    allowNull: true
-  }
-}, {
-  tableName: 'alunos'
-});
+  Aluno.associate = (models) => {
+    Aluno.hasMany(models.Matricula, {
+      foreignKey: 'alunoId',
+      as: 'matriculas',
+    });
+  };
 
-module.exports = Aluno;
+  return Aluno;
+};

@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const vendaController = require('../controllers/vendaController');
-const auth = require('../middlewares/authMiddleware');
+const auth = require('../middleware/authMiddleware'); // <-- corrigido aqui
 
 router.post('/', auth, vendaController.criarVenda);
 router.get('/', auth, vendaController.listarVendas);

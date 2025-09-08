@@ -1,21 +1,26 @@
 // backend/models/Escola.js
-const { Model } = require("sequelize");
-
 module.exports = (sequelize, DataTypes) => {
-  class Escola extends Model {}
-
-  Escola.init(
-    {
-      nome: { type: DataTypes.STRING, allowNull: false },
-      inicioPeriodoTeste: { type: DataTypes.DATE, allowNull: true },
-      isencaoAtiva: { type: DataTypes.BOOLEAN, defaultValue: false }
+  const Escola = sequelize.define('Escola', {
+    nome: {
+      type: DataTypes.STRING,
+      allowNull: false,
     },
-    {
-      sequelize,
-      modelName: "Escola",
-      tableName: "escolas"
-    }
-  );
+    isencaoAtiva: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+  });
+
+  Escola.associate = (models) => {
+    Escola.hasMany(models.Matricula, {
+      foreignKey: 'escolaId',
+      as: 'matriculas',
+    });
+    Escola.hasMany(models.User, {
+      foreignKey: 'escolaId',
+      as: 'usuarios',
+    });
+  };
 
   return Escola;
 };
